@@ -1,4 +1,4 @@
-# mnist-image-ibm-ce
+# Image recognition machine learning prediction app
 Train and use the MNIST image prediction model in the IBM Code Engine environment
 
 This project creates and trains a machine learning model that predicts what number a handrawn digit (0-9) is. It is built using the code and data sets of the "hello world" of ML - the MNIST image dataset.
