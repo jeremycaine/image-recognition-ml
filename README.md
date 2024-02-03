@@ -66,14 +66,25 @@ gunicorn -w 1 -b :3000 main:app
 ```
 In production we can scale the number of containers. In each container there will be a number of Gunicorn worker threads running. This could there be an environment variable injected at deployment time.
 
-## Run as a container locally
-When you run the container you need to inject the Cloud Object storage API key to the app running in the container can access the bucket.
+## Run as containers locally
+When you run the containers you need to inject the Cloud Object storage API key to the app running in the container can access the bucket.
 
 Assuming you have full control over your development then a simple hack is to run as root so the container process can write to the file system when it is getting the model file.
+
+### Start the API app
 ```
-podman build -t digit-image:latest .
-podman run -u root -t -p 3000:8080 -e COS_API_KEY_ID=xxxxxx digit-image:latest
+cd image-rec-ml-api
+podman build -t image-rec-ml-api:latest .
+podman run -u root -t -p 3001:8081 -e COS_API_KEY_ID=xxxxxx image-rec-ml-api:latest
 ```
+
+### Start the web app
+```
+cd image-rec-app
+podman build -t image-rec-app:latest .
+podman run -u root -t -p 3000:8080 -e PREDICT_API_URL=http://localhost:3001/image image-rec-app:latest
+```
+
 
 ## IBM Cloud Engine
 Login and set right targets for IBM Code Engine work
