@@ -1,0 +1,7 @@
+flask
+h5py
+ibm_cos_sdk
+numpy
+Pillow
+python-dotenv
+gunicorn

@@ -1,0 +1,9 @@
+h5py
+gunicorn
+ibm_cos_sdk
+keras
+matplotlib
+numpy
+pandas
+python-dotenv
+requests
