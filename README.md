@@ -1,13 +1,15 @@
 # Image recognition machine learning prediction app
-Train and use the MNIST image prediction model in the IBM Code Engine environment
+Train and use the MNIST image prediction model.
 
 This project creates and trains a machine learning model that predicts what number a handrawn digit (0-9) is. It is built using the code and data sets of the "hello world" of ML - the MNIST image dataset.
 
-The `train-model` folder contains the code to create and train the model. It runs as a Job in IBM Cloud Engine and stores the output model in IBM Cloud Object Storage (COS). IBM Code Engine serverless environment is pure x86, not GPUs are used for training the model. For MNIST image, the model and training data is small enough that this simple x86 environment works well.
+It uses the IBM Cloud environment for object storage of training and model files. The prediction app can be run locally and serverless in the IBM Code Engine environment
 
-The `image-rec-app` folder contains the code to run a web app where you can handraw a digit (using mouse or trackpad). The web app is an IBM Code Engine web application. 
+The `train-model` folder contains the code to create and train the model. When using serverless, it runs as a Job in IBM Code Engine and stores the output model in IBM Cloud Object Storage (COS). IBM Code Engine serverless environment is pure x86, not GPUs are used for training the model. For MNIST image, the model and training data is small enough that this simple x86 environment works well.
 
-The `image-rec-ml-api` folder contains the code to serve an API which takes an image as input. This app is an IBM Code Engine web application. The API app loads with an `init()` that downloads the model file from IBM COS and the loads the model into memory.
+The `image-rec-app` folder contains the code to run a web app where you can handraw a digit (using mouse or trackpad). When using serverless, the web app is an IBM Code Engine web application. 
+
+The `image-rec-ml-api` folder contains the code to serve an API which takes an image as input. When using serverless, this app is an IBM Code Engine web application. The API app loads with an `init()` that downloads the model file from IBM COS and the loads the model into memory.
 
 A serverless environment is useful for simple build and hosting of application for experimentation when you might not have sufficient resources in your local environment. 
 
@@ -118,7 +120,7 @@ ibmcloud ce project list
 ibmcloud ce project select --name image-recognition-ml
 
 # need secret
-ibmcloud ce secret create --name caine-cos-api-key --from-literal COS_API_KEY_ID=xxxxxxx
+ibmcloud ce secret create --name caine-cos-api-key --from-literal COS_API_KEY_ID=xxxx
 
 # config map for variables
 ibmcloud ce configmap create --name image-recognition-ml \
@@ -135,7 +137,7 @@ ibmcloud ce configmap create --name image-recognition-ml \
 Job to train image prediction model
 ```
 # create app first time
-ibmcloud ce job create --name train-model --src https://github.com/jeremycaine/mnist-image-ibm-ce --bcdr train-model --str dockerfile --env-from-secret caine-cos-api-key --env-from-configmap mnist-image-ibm-ce-cm --size large
+ibmcloud ce job create --name train-model --src https://github.com/jeremycaine/image-recognition-ml --bcdr train-model --str dockerfile --env-from-secret caine-cos-api-key --env-from-configmap image-recognition-ml --size large
 
 # or, rebuild after git commit
 ibmcloud ce job update --name train-model --rebuild
@@ -145,13 +147,30 @@ ibmcloud ce job delete --name train-model
 ```
 
 ### Predict Image Model API 
-API to call prediction of digit in image passed to it
+API receives image and uses model to predict what number (0-9) the handdrawn digit is in the image
 ```
-# create app first time
-ibmcloud ce app create --name image-rec-ml-app --src https://github.com/jeremycaine/mnist-image-ibm-ce --bcdr image-rec-ml-app --str dockerfile --env-from-secret caine-cos-api-key --env-from-configmap mnist-image-ibm-ce-cm
+# create API first time
+ibmcloud ce app create --name image-rec-ml-api --src https://github.com/jeremycaine/image-recognition-ml --bcdr image-rec-ml-api --str dockerfile --env-from-secret caine-cos-api-key --env-from-configmap image-recognition-ml
 
 # or, rebuild after git commit
-ibmcloud ce app update --name image-rec-ml-app --rebuild
+ibmcloud ce app update --name image-rec-ml-api --rebuild
+```
+
+#### Get the API app URL
+The create command call completes returning the URL of the API app
+e.g. `https://image-rec-ml-api.1d0xljwi5e8d.us-south.codeengine.appdomain.cloud`
+
+The API now has a URL in the serverless environment. This needs to be in an environment variable so the web app can use it to call the API.
+
+The PREDICT_API_URL is the URL location of the API app plus `/image`.
+
+```
+# check the "URL:" line in the details of the app
+ibmcloud ce application get -n image-rec-ml-api
+
+# set the env var the image recognition app
+ibmcloud ce configmap update --name image-recognition-ml \
+    --from-literal PREDICT_API_URL=https://image-rec-ml-api.1d0xljwi5e8d.us-south.codeengine.appdomain.cloud/image 
 ```
 
 ### Image Prediction App 

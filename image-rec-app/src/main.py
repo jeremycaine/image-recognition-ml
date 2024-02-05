@@ -17,6 +17,7 @@ def index():
 
 @app.route('/image', methods=['POST'])
 def image():
+    log("PREDICT_API_URL=" + str(predict_api_url))
 
     # get the image bytes from HTTP request
     data=flask.request.data
