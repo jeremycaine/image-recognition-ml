@@ -16,7 +16,7 @@ RUN pip install -U "pip>=19.3.1" && \
 USER 1001
 
 ## 3. Image identification
-LABEL name="jeremycaine/mnist-image-ibm-ce/digit-image" \
+LABEL name="jeremycaine/image-recognition-ml/image-rec-ml-api" \
       vendor="Acme, Inc." \
       version="1.2.3" \
       release="45" \
@@ -45,11 +45,11 @@ RUN chown -R 1001:0 $HOME
 COPY src/ ./
 
 ## Set environment environment variables and expose port
-ENV PORT 8080
-EXPOSE 8080
+ENV PORT 8081
+EXPOSE 8081
 
 # Gunicorn https://docs.gunicorn.org/en/latest/design.html#how-many-workers
-ENV WORKERS 3
+ENV WORKERS 2
 
 ## Run script uses standard ways to run the application
 CMD gunicorn -w ${WORKERS} -b :${PORT} main:app

@@ -21,7 +21,7 @@ The original Yann LeCun MNIST database site is [here](http://yann.lecun.com/exdb
 The code to build and train this Deep Learning model - a Convolutional Neural Net (CNN) - is taken from [this Red Hat tutorial](https://developers.redhat.com/learn/openshift-data-science/how-create-tensorflow-model)
 
 ## Local Install
-from `mnist-image-ibm-ce` directory go to `train-model`, `digit-image-app` and the `src` directory in each and run `pip install -r requirements.txt`
+from `image-recognition-ml` directory go to `train-model`, `image-rec-app`, and `image-rec-ml-api` and the `src` directory in each and run `pip install -r requirements.txt`
 ```
 # e.g. if you are using conda to manage your python environment
 conda activate py11
@@ -53,10 +53,11 @@ mnist_test.csv
 ```
 
 ## Production server
-Production Python apps should use a WSGI HTTP server. The `digit-image-app` uses  [Gunicorn](https://gunicorn.org).
+Production Python apps should use a WSGI HTTP server. The `image-rec-app` uses  [Gunicorn](https://gunicorn.org).
 
 Run and test app with Gunicorn locally.
 ```
+cd image-rec-app
 pip install gunicorn
 
 # -w for number of worker process numbers; 1 is fine for local dev
@@ -71,19 +72,26 @@ When you run the containers you need to inject the Cloud Object storage API key 
 
 Assuming you have full control over your development then a simple hack is to run as root so the container process can write to the file system when it is getting the model file.
 
-### Start the API app
+### Build the containers
 ```
 cd image-rec-ml-api
 podman build -t image-rec-ml-api:latest .
-podman run -u root -t -p 3001:8081 -e COS_API_KEY_ID=xxxxxx image-rec-ml-api:latest
-```
-
-### Start the web app
-```
 cd image-rec-app
 podman build -t image-rec-app:latest .
-podman run -u root -t -p 3000:8080 -e PREDICT_API_URL=http://localhost:3001/image image-rec-app:latest
 ```
+
+### Run the system
+Create a pod for the web app and API to run in. 
+
+We expose the port that the app will listen on for browser requests. 
+
+The API container needs the COS key and to run as root since it is using the local filesystem for temporary files used to get the model from COS and load into memory.
+```
+podman pod create --name image-rec-pod -p 3000:8080
+podman run --pod image-rec-pod -d -u root --name ml-api -e COS_API_KEY_ID=xxxx -t image-rec-ml-api:latest
+podman run --pod image-rec-pod -d --name rec-app -e PREDICT_API_URL=http://localhost:8081/image -t image-rec-app:latest
+```
+Now in a browser go to the app at `http://localhost:3000`. Draw an image in the canvas with your mousepad and Send.
 
 
 ## IBM Cloud Engine

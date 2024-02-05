@@ -68,7 +68,7 @@ def init():
             
             os.remove(fn)
         
-        log("Loaded Model from COS")
+        log("Loaded model successfully from COS")
         return model
     except ClientError as be:
         log(be)
@@ -77,7 +77,7 @@ def init():
         log("Unable to get file: {0}".format(e))
         sys.exit(1)
 
-log("get cos connection ...")
+log("getting cos connection ...")
 # create cloud objec storage connection
 cos_cli = ibm_boto3.client("s3",
     ibm_api_key_id=COS_API_KEY_ID,
@@ -89,6 +89,10 @@ cos_cli = ibm_boto3.client("s3",
 
 global model
 model = init()
+
+@app.route('/', methods=['GET'])
+def index():
+    return "ready"
 
 @app.route('/image', methods=['POST'])
 def image():

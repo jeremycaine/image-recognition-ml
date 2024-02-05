@@ -16,7 +16,7 @@ RUN pip install -U "pip>=19.3.1" && \
 USER 1001
 
 ## 3. Image identification
-LABEL name="jeremycaine/mnist-image-ibm-ce/image-rec-app" \
+LABEL name="jeremycaine/image-recognition-ml/image-rec-app" \
       vendor="Acme, Inc." \
       version="1.2.3" \
       release="45" \
