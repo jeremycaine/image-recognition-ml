@@ -22,7 +22,7 @@ The original Yann LeCun MNIST database site is [here](http://yann.lecun.com/exdb
 
 The code to build and train this Deep Learning model - a Convolutional Neural Net (CNN) - is taken from [this Red Hat tutorial](https://developers.redhat.com/learn/openshift-data-science/how-create-tensorflow-model)
 
-## Local Install
+## Setup
 from `image-recognition-ml` directory go to `train-model`, `image-rec-app`, and `image-rec-ml-api` and the `src` directory in each and run `pip install -r requirements.txt`
 ```
 # e.g. if you are using conda to manage your python environment
@@ -31,7 +31,7 @@ cd ~/train-mode/src
 pip install -r requirements.txt
 ```
 
-## Local Apple Mac on Metal
+### Local Apple Mac on Metal
 For those using Apple Macbook and M1 chip you need to setup Tensorflow accordingly.
 https://developer.apple.com/metal/tensorflow-plugin/
 
@@ -43,7 +43,7 @@ python -m pip install tensorflow-macos==2.10.0
 # tensorflow-metal        0.6.0
 ```
 
-## IBM Cloud Object Storage
+### IBM Cloud Object Storage
 From your IBM Cloud account you need to create a COS bucket in your COS service and then get the credentials to the bucket. Then ensure you local environment has that key.
 ```
 export COS_API_KEY_ID=xxx
@@ -54,7 +54,7 @@ mnist_train.csv
 mnist_test.csv
 ```
 
-## Production server
+### Production server
 Production Python apps should use a WSGI HTTP server. The `image-rec-app` uses  [Gunicorn](https://gunicorn.org).
 
 Run and test app with Gunicorn locally.
@@ -69,7 +69,7 @@ gunicorn -w 1 -b :3000 main:app
 ```
 In production we can scale the number of containers. In each container there will be a number of Gunicorn worker threads running. This could there be an environment variable injected at deployment time.
 
-## Run as containers locally
+## Run as Containers on Local
 When you run the containers you need to inject the Cloud Object storage API key to the app running in the container can access the bucket.
 
 Assuming you have full control over your development then a simple hack is to run as root so the container process can write to the file system when it is getting the model file.
@@ -96,7 +96,7 @@ podman run --pod image-rec-pod -d --name rec-app -e PREDICT_API_URL=http://local
 Now in a browser go to the app at `http://localhost:3000`. Draw an image in the canvas with your mousepad and Send.
 
 
-## IBM Cloud Engine
+## Run on IBM Cloud Code Engine
 Login and set right targets for IBM Code Engine work
 ```
 ibmcloud login  ...
@@ -111,7 +111,7 @@ One-time to create an IBM Code Engine project
 ibmcloud ce project create --name image-recognition-ml
 ```
 
-### Configure Project
+#### Configure Project
 You will create a secret key for your COS bucket credentials. Then you setup various environment variables in a ConfigMap for you Code Engine project environment. This Secret and the ConfigMap is used in the build of your applications and jobs in Code Engine. If you look in the source code you will see these same parameters defaulted so strictly speaking you don't need them in the ConfigMap. 
 
 ```
@@ -133,7 +133,7 @@ ibmcloud ce configmap create --name image-recognition-ml \
     --from-literal TEST_CSV=mnist_test.csv
 ```
 
-### Train Image Prediction Model
+#### Train Image Prediction Model
 Job to train image prediction model
 ```
 # create app first time
@@ -146,7 +146,7 @@ ibmcloud ce job update --name train-model --rebuild
 ibmcloud ce job delete --name train-model
 ```
 
-### Predict Image Model API 
+#### Predict Image Model API 
 API receives image and uses model to predict what number (0-9) the handdrawn digit is in the image
 ```
 # create API first time
@@ -156,7 +156,7 @@ ibmcloud ce app create --name image-rec-ml-api --src https://github.com/jeremyca
 ibmcloud ce app update --name image-rec-ml-api --rebuild
 ```
 
-#### Get the API app URL
+##### Get the API app URL
 The create command call completes returning the URL of the API app
 e.g. `https://image-rec-ml-api.1d0xljwi5e8d.us-south.codeengine.appdomain.cloud`
 
@@ -173,17 +173,17 @@ ibmcloud ce configmap update --name image-recognition-ml \
     --from-literal PREDICT_API_URL=https://image-rec-ml-api.1d0xljwi5e8d.us-south.codeengine.appdomain.cloud/image 
 ```
 
-### Image Prediction App 
+#### Image Prediction App 
 App to draw a digit and call the model to predict what the number (0-9) is 
 ```
 # create app first time
-ibmcloud ce app create --name image-rec-app --src https://github.com/jeremycaine/mnist-image-ibm-ce --bcdr image-rec-app --str dockerfile 
+ibmcloud ce app create --name image-rec-app --src https://github.com/jeremycaine/image-recognition-ml --bcdr image-rec-app --str dockerfile --env-from-configmap image-recognition-ml
 
 # or, rebuild after git commit
 ibmcloud ce app update --name image-rec-app --rebuild
 ```
 
-## Test the Application
+### Test the Application in IBM Code Engine
 First, create and train the model in IBM Code Engine
 
 From the cloud console and the job `train-model` submit the job. You can watch its progress from Logging in the drop down menu top right.
@@ -192,7 +192,7 @@ Then, check that the model file `mnist-model.h5` is in your COS bucket.
 
 Next, you can launch the image recognition web app. In your IBM Code Engine project go to application `image-rec-app`, click on Test Application and you will see link to 'Application URL'. 
 
-You can see it in action [here](https://image-rec-app.17bu6les2m8a.us-south.codeengine.appdomain.cloud).
+You can see it in action [here](https://image-rec-app.1d0xljwi5e8d.us-south.codeengine.appdomain.cloud).
 
 To use the app, use your trackpad or mouse to hand draw a digit between 0 and 9, then click Send. The model is called and a prediction as to what digit you drew comes bacl. Hit Clear to start again.
 
